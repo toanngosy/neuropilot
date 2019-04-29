@@ -120,7 +120,7 @@ class QuadRotorEnv(gym.Env):
 
         return np.array(self.state)
 
-    # TODO: implement
+    # TODO: current state: matplotlib, todo: upward indicator. openGL? Unity?
     def render(self, mode='human'):
 
         if self.viewer is None:
@@ -136,6 +136,15 @@ class QuadRotorEnv(gym.Env):
             self.l1,  = self.ax.plot([], [], [], color='blue', linewidth=3, antialiased=False)
             self.l2,  = self.ax.plot([], [], [], color='blue', linewidth=3, antialiased=False)
             self.hub, = self.ax.plot([], [], [], marker='o', color='blue', markersize=6, antialiased=False)
+
+            self.hub_indicator = Arrow3D([], [], [], mutation_scale=20, lw=3, arrowstyle="-|>", color="r")
+            self.ax.add_artist(self.hub_indicator)
+
+            # plot target
+            print(self.target)
+            self.ax.plot([self.target[0]], [self.target[1]], [self.target[2]], marker='o', color='red', markersize=6, antialiased=False)
+
+            # add manual control
             self.viewer.canvas.mpl_connect('key_press_event', self._keypress_routine)
 
         R = self._rotation_matrix(self.state[3:6])
@@ -145,15 +154,18 @@ class QuadRotorEnv(gym.Env):
         points[0, :] += self.state[0]
         points[1, :] += self.state[1]
         points[2, :] += self.state[2]
+
         self.l1.set_data(points[0, 0:2], points[1, 0:2])
         self.l1.set_3d_properties(points[2, 0:2])
         self.l2.set_data(points[0, 2:4], points[1, 2:4])
         self.l2.set_3d_properties(points[2, 2:4])
         self.hub.set_data(points[0, 5], points[1, 5])
         self.hub.set_3d_properties(points[2, 5])
+
+        # TODO: add hub indicator
+
         plt.pause(1e-12)
 
-    #TODO: implement
     def close(self):
         if self.viewer:
             self.viewer.close()
@@ -260,6 +272,7 @@ class QuadRotorEnv(gym.Env):
             x[1] -= 1
             self.ax.set_xlim3d(x)
 
+# support class
 class Propeller:
     def __init__(self, diameter, pitch, thrust_unit='N'):
         self.d = diameter
@@ -280,3 +293,19 @@ class Propeller:
     def reset(self):
         self.speed = 0
         self.thrust = 0
+
+
+
+from matplotlib.patches import FancyArrowPatch
+from mpl_toolkits.mplot3d import proj3d
+
+class Arrow3D(FancyArrowPatch):
+    def __init__(self, xs, ys, zs, *args, **kwargs):
+        FancyArrowPatch.__init__(self, (0, 0), (0, 0), *args, **kwargs)
+        self._verts3d = xs, ys, zs
+
+    def draw(self, renderer):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
+        self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
+        FancyArrowPatch.draw(self, renderer)
