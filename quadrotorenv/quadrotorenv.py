@@ -3,7 +3,9 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 import numpy as np
 from scipy import integrate
-
+import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d.axes3d as Axes3D
+import sys
 
 class QuadRotorEnv(gym.Env):
 
@@ -53,9 +55,14 @@ class QuadRotorEnv(gym.Env):
         self.In = np.array([[Ixx, 0, 0], [0, Iyy, 0], [0, 0, Izz]])
         self.invI = np.linalg.inv(self.In)
 
+        # set solver
         self.ode = integrate.ode(self._state_dot).set_integrator('vode', nsteps=500, method='bdf')
 
+        # set random seed
         self.seed()
+
+        # set viewer
+        self.viewer = None
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -76,6 +83,7 @@ class QuadRotorEnv(gym.Env):
     def reward(self):
         if self._crashed():
             return -5
+
         d = np.sqrt((self.state[0] - self.target[0])**2 + \
                     (self.state[1] - self.target[1])**2 + \
                     (self.state[2] - self.target[2])**2)
@@ -114,11 +122,42 @@ class QuadRotorEnv(gym.Env):
 
     # TODO: implement
     def render(self, mode='human'):
-        pass
+
+        if self.viewer is None:
+            self.viewer = plt.figure()
+            self.ax = Axes3D.Axes3D(self.viewer)
+            self.ax.set_xlim3d([self.min_x, self.max_x])
+            self.ax.set_xlabel('X')
+            self.ax.set_ylim3d([self.min_y, self.max_y])
+            self.ax.set_ylabel('Y')
+            self.ax.set_zlim3d([self.min_z, self.max_z])
+            self.ax.set_zlabel('Z')
+            self.ax.set_title('Quadrotor Simulation')
+            self.l1,  = self.ax.plot([], [], [], color='blue', linewidth=3, antialiased=False)
+            self.l2,  = self.ax.plot([], [], [], color='blue', linewidth=3, antialiased=False)
+            self.hub, = self.ax.plot([], [], [], marker='o', color='blue', markersize=6, antialiased=False)
+            self.viewer.canvas.mpl_connect('key_press_event', self._keypress_routine)
+
+        R = self._rotation_matrix(self.state[3:6])
+        L = self.L
+        points = np.array([[-L, 0, 0], [L, 0, 0], [0, -L, 0], [0, L, 0], [0, 0, 0], [0, 0, 0]]).T
+        points = np.dot(R, points)
+        points[0, :] += self.state[0]
+        points[1, :] += self.state[1]
+        points[2, :] += self.state[2]
+        self.l1.set_data(points[0, 0:2], points[1, 0:2])
+        self.l1.set_3d_properties(points[2, 0:2])
+        self.l2.set_data(points[0, 2:4], points[1, 2:4])
+        self.l2.set_3d_properties(points[2, 2:4])
+        self.hub.set_data(points[0, 5], points[1, 5])
+        self.hub.set_3d_properties(points[2, 5])
+        plt.pause(1e-12)
 
     #TODO: implement
     def close(self):
-        pass
+        if self.viewer:
+            self.viewer.close()
+            self.viewer = None
 
     def _rotation_matrix(self, angles):
         ct = np.cos(angles[0])
@@ -195,6 +234,31 @@ class QuadRotorEnv(gym.Env):
         else:
             return False
 
+    def _keypress_routine(self, event):
+        sys.stdout.flush()
+        if event.key == 'w':
+            y = list(self.ax.get_ylim3d())
+            y[0] += 1
+            y[1] += 1
+            self.ax.set_ylim3d(y)
+
+        if event.key == 'x':
+            y = list(self.ax.get_ylim3d())
+            y[0] -= 1
+            y[1] -= 1
+            self.ax.set_ylim3d(y)
+
+        if event.key == 'd':
+            x = list(self.ax.get_xlim3d())
+            x[0] += 1
+            x[1] += 1
+            self.ax.set_xlim3d(x)
+
+        if event.key == 'a':
+            x = list(self.ax.get_xlim3d())
+            x[0] -= 1
+            x[1] -= 1
+            self.ax.set_xlim3d(x)
 
 class Propeller:
     def __init__(self, diameter, pitch, thrust_unit='N'):

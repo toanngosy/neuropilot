@@ -17,5 +17,6 @@ done = False
 i = 0
 while not done:
     i += 1
+    env.render()
     obs, reward, done, _ = env.step(env.action_space.sample())
     print(reward, end=" ")
