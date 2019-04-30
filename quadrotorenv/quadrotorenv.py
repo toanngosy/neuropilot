@@ -91,20 +91,21 @@ class QuadRotorEnv(gym.Env):
         if self._crashed():
             return -5
 
-        d = np.sqrt((self.state[0] - self.target[0])**2 + \
+        old_dist_reward = self.d
+        self.d = np.sqrt((self.state[0] - self.target[0])**2 + \
                     (self.state[1] - self.target[1])**2 + \
                     (self.state[2] - self.target[2])**2)
         #self.reward_bin = np.array([0, d/3, 2*d/3, d])
         #self.reward_list = np.array([-0.75, -0.5, 0, 0.5])
         #dist_reward = self.reward_list[(np.digitize(d, self.reward_bin)-1)]
-        dist_reward = - d
-        pose_reward = -((abs(self.state[3:6])/self.max_speed).sum() + \
-                        (abs(self.state[6:8])/np.pi).sum() + \
-                        (abs(self.state[9:12])/self.max_angular_speed).sum())
+        dist_reward = self.d
+        #pose_reward = -((abs(self.state[3:6])/self.max_speed).sum() + \
+        #               (abs(self.state[6:8])/np.pi).sum() + \
+        #               (abs(self.state[9:12])/self.max_angular_speed).sum())
 
-        time_reward = -0.01*self.num_step
-
-        reward = 0.7*dist_reward + 0.15*time_reward + 0.15*pose_reward
+        #time_reward = -0.01*self.num_step
+        #reward = 0.7*dist_reward + 0.15*time_reward + 0.15*pose_reward
+        reward = -(dist_reward - old_dist_reward)
         #print(reward, dist_reward, time_reward, pose_reward)
         if self._reach_target():
             return reward + 20
@@ -113,16 +114,20 @@ class QuadRotorEnv(gym.Env):
 
     def reset(self):
         # random spawn target
-        self.target = np.zeros((3,))
-        self.target[0] = np.random.uniform(low=self.min_x, high=self.max_x)
-        self.target[1] = np.random.uniform(low=self.min_y, high=self.max_y)
-        self.target[2] = np.random.uniform(low=self.min_z, high=self.max_z)
+        #self.target = np.zeros((3,))
+        #self.target[0] = np.random.uniform(low=self.min_x, high=self.max_x)
+        #self.target[1] = np.random.uniform(low=self.min_y, high=self.max_y)
+        #self.target[2] = np.random.uniform(low=self.min_z, high=self.max_z)
+        self.target = np.array([10,10,10])
 
         # random spawn agent
         self.state = np.zeros(self.observation_space.shape)
-        self.state[0] = np.random.uniform(low=self.min_x, high=self.max_x)
-        self.state[1] = np.random.uniform(low=self.min_y, high=self.max_y)
-        self.state[2] = np.random.uniform(low=self.min_z, high=self.max_z)
+        #self.state[0] = np.random.uniform(low=self.min_x, high=self.max_x)
+        #self.state[1] = np.random.uniform(low=self.min_y, high=self.max_y)
+        #self.state[2] = np.random.uniform(low=self.min_z, high=self.max_z)
+        self.state[0] = 15
+        self.state[1] = 15
+        self.state[2] = 15
         self.state[6:9] = np.random.uniform(low=self.min_angle, high=self.max_angle, size=3)
 
         # reset propeller
@@ -134,6 +139,9 @@ class QuadRotorEnv(gym.Env):
         # reset no. step
         self.num_step = 0
 
+        self.d = np.sqrt((self.state[0] - self.target[0])**2 + \
+                    (self.state[1] - self.target[1])**2 + \
+                    (self.state[2] - self.target[2])**2)
         return np.array(self.state)
 
     # TODO: current state: matplotlib, todo: upward indicator. openGL? Unity?

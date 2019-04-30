@@ -6,6 +6,7 @@ from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
 from keras.models import Sequential, Model
 import tensorflow as tf
+import os
 
 import gym
 import quadrotorenv
@@ -13,12 +14,19 @@ import argparse
 from datetime import datetime
 from quadtensorboard import QuadTensorBoard
 
-"""parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
+parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
 parser.add_argument('--step', dest='step', action='store', default=2000)
 parser.add_argument('--train', dest='train', action='store_true', default=True)
 parser.add_argument('--test', dest='train', action='store_false', default=True)
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
-args = parser.parse_args()"""
+parser.add_argument('--model', dest='model', action='store', default="0")
+parser.add_argument('--resume', dest='resume', action='store_true', default=False)
+args = parser.parse_args()
+
+if not os.path.exists('weights'):
+    os.mkdir('weights')
+    print("Directory ", 'weights',  " Created ")
+FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
 env = gym.make('QuadRotorEnv-v0')
 env.reset()
@@ -38,7 +46,7 @@ DISC_FACT = 0.9
 TARGET_MODEL_UPDATE = 0.001
 BATCH_SIZE = 128
 ACTION_REPETITION = 5
-N_STEPS_TRAIN = 25000
+N_STEPS_TRAIN = 250000
 LOG_INTERVAL = 1000
 
 observation_input = Input(shape=input_shape, name='observation_input')
@@ -102,8 +110,24 @@ agent.compile(optimizer=[opti_critic, opti_actor])
 logdir = "logs/" + datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
 quadtensorboard = QuadTensorBoard(log_dir=logdir)
 
-agent.fit(env, nb_steps=N_STEPS_TRAIN,
+
+
+if args.train:
+    if args.resume:
+        agent.load_weights(FILES_WEIGHTS_NETWORKS)
+
+    try:
+        agent.fit(env, nb_steps=N_STEPS_TRAIN,
           verbose=True, log_interval=LOG_INTERVAL, visualize=False,
           callbacks=[quadtensorboard], action_repetition = ACTION_REPETITION)
 
-agent.test(env, nb_episodes=10, visualize=True)
+        agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+    except KeyboardInterrupt:
+        print("interruption detected , saving weights....")
+        agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+
+
+#### TEST #####
+if not args.train:
+    agent.load_weights(FILES_WEIGHTS_NETWORKS)
+    agent.test(env, nb_episodes=10, visualize=True)
