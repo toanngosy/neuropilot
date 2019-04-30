@@ -11,7 +11,7 @@ import sys
 class QuadRotorEnv(gym.Env):
 
     def __init__(self, m=1.2, L=0.5, r=0.2, prop_diameter=10, prop_pitch=4.5):
-        self.max_speed = 9000
+        self.max_speed = 1
         self.min_speed = 0
         self.max_angular_speed = np.pi/6
         self.min_x = 0
@@ -159,7 +159,7 @@ class QuadRotorEnv(gym.Env):
             self.ax.set_title('Quadrotor Simulation')
             self.l1,  = self.ax.plot([], [], [], color='blue', linewidth=3, antialiased=False)
             self.l2,  = self.ax.plot([], [], [], color='blue', linewidth=3, antialiased=False)
-            self.hub, = self.ax.plot([], [], [], marker='o', color='blue', markersize=6, antialiased=False)
+            self.hub, = self.ax.plot([], [], [], marker='^', color='blue', markersize=6, antialiased=False)
 
             #self.upward_indicator = Arrow3D([], [], [], mutation_scale=20, lw=3, arrowstyle="-|>", color="r")
             #self.ax.add_artist(self.upward_indicator)
@@ -299,14 +299,17 @@ class QuadRotorEnv(gym.Env):
 
 # support class
 class Propeller:
-    def __init__(self, diameter, pitch, thrust_unit='N'):
+    def __init__(self, diameter, pitch, thrust_unit='N', min_speed = 0, max_speed = 9000):
         self.d = diameter
         self.pitch = pitch
         self.thrust_unit = thrust_unit
+        self.max_speed = max_speed
+        self.min_speed = min_speed
         self.reset()
 
-    def set_speed(self, speed):
-        self.speed = speed
+    def set_speed(self, normalized_speed):
+
+        self.speed = self.min_speed + (self.max_speed - self.min_speed)*normalized_speed
         self.update_thrust()
 
     def update_thrust(self):
