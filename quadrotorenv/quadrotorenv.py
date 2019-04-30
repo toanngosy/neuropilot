@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as Axes3D
 import sys
 
+
 class QuadRotorEnv(gym.Env):
 
-    def __init__(self, m=1.2, L=0.5, r=0.2, prop_diameter=10, prop_pitch=4.5, b=0.0245):
+    def __init__(self, m=1.2, L=0.5, r=0.2, prop_diameter=10, prop_pitch=4.5):
         self.max_speed = 9000
         self.min_speed = 0
         self.max_angular_speed = np.pi/6
@@ -22,26 +23,29 @@ class QuadRotorEnv(gym.Env):
         self.min_angle = -np.pi/6
         self.max_angle = np.pi/6
         self.g = 9.81
+        self.b = 0.0245
         self.m = m
         self.L = L
         self.r = r
         self.prop_diameter = prop_diameter
         self.prop_pitch = prop_pitch
-        self.b = b
 
         self.action_space = spaces.Box(low=self.min_speed, high=self.max_speed,
                                        shape=(4,), dtype=np.float32)
 
-        """
-        high = np.array([
-                   self.x_threshold * 2,
-                   np.finfo(np.float32).max,
-                   self.theta_threshold_radians * 2,
-                   np.finfo(np.float32).max])
-        """
+        obs_high = np.array([
+                   self.max_x, self.max_y, self.max_z,
+                   np.finfo(np.float32).max, np.finfo(np.float32).max, np.finfo(np.float32).max,
+                   np.pi/2, np.pi/2, np.pi/2,
+                   np.finfo(np.float32).max, np.finfo(np.float32).max, np.finfo(np.float32).max])
+        obs_low = np.array([
+                   self.min_x, self.min_y, self.min_z,
+                   np.finfo(np.float32).min, np.finfo(np.float32).min, np.finfo(np.float32).min,
+                   -np.pi/2, -np.pi/2, -np.pi/2,
+                   np.finfo(np.float32).min, np.finfo(np.float32).min, np.finfo(np.float32).min])
+
         # TODO: fix observation_space bound - @nimbus state[]
-        self.observation_space = spaces.Box(low=-1000, high=1000,
-                                            shape=(12,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=obs_low, high=obs_high, dtype=np.float32)
 
         self.motor1 = Propeller(self.prop_diameter, self.prop_pitch)
         self.motor2 = Propeller(self.prop_diameter, self.prop_pitch)
@@ -78,6 +82,9 @@ class QuadRotorEnv(gym.Env):
         done = self._crashed() or self._reach_target()
         reward = self.reward()
 
+        # increase num_step
+        self.num_step += 1
+
         return self.state, reward, done, {}
 
     def reward(self):
@@ -87,14 +94,20 @@ class QuadRotorEnv(gym.Env):
         d = np.sqrt((self.state[0] - self.target[0])**2 + \
                     (self.state[1] - self.target[1])**2 + \
                     (self.state[2] - self.target[2])**2)
+        #self.reward_bin = np.array([0, d/3, 2*d/3, d])
+        #self.reward_list = np.array([-0.75, -0.5, 0, 0.5])
+        #dist_reward = self.reward_list[(np.digitize(d, self.reward_bin)-1)]
+        dist_reward = - d
         pose_reward = -((abs(self.state[3:6])/self.max_speed).sum() + \
                         (abs(self.state[6:8])/np.pi).sum() + \
                         (abs(self.state[9:12])/self.max_angular_speed).sum())
 
-        reward = pose_reward
+        time_reward = -0.01*self.num_step
 
+        reward = 0.7*dist_reward + 0.15*time_reward + 0.15*pose_reward
+        #print(reward, dist_reward, time_reward, pose_reward)
         if self._reach_target():
-            return reward + 1
+            return reward + 20
 
         return reward
 
@@ -118,6 +131,9 @@ class QuadRotorEnv(gym.Env):
         self.motor3.reset()
         self.motor4.reset()
 
+        # reset no. step
+        self.num_step = 0
+
         return np.array(self.state)
 
     # TODO: current state: matplotlib, todo: upward indicator. openGL? Unity?
@@ -137,11 +153,11 @@ class QuadRotorEnv(gym.Env):
             self.l2,  = self.ax.plot([], [], [], color='blue', linewidth=3, antialiased=False)
             self.hub, = self.ax.plot([], [], [], marker='o', color='blue', markersize=6, antialiased=False)
 
-            self.hub_indicator = Arrow3D([], [], [], mutation_scale=20, lw=3, arrowstyle="-|>", color="r")
-            self.ax.add_artist(self.hub_indicator)
+            #self.upward_indicator = Arrow3D([], [], [], mutation_scale=20, lw=3, arrowstyle="-|>", color="r")
+            #self.ax.add_artist(self.upward_indicator)
 
             # plot target
-            print(self.target)
+            #print(self.target)
             self.ax.plot([self.target[0]], [self.target[1]], [self.target[2]], marker='o', color='red', markersize=6, antialiased=False)
 
             # add manual control
@@ -242,6 +258,7 @@ class QuadRotorEnv(gym.Env):
                     (self.state[1] - self.target[1])**2 + \
                     (self.state[2] - self.target[2])**2)
         if d < 0.05:
+            print("reach!")
             return True
         else:
             return False
@@ -295,8 +312,7 @@ class Propeller:
         self.thrust = 0
 
 
-
-from matplotlib.patches import FancyArrowPatch
+"""from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import proj3d
 
 class Arrow3D(FancyArrowPatch):
@@ -309,3 +325,4 @@ class Arrow3D(FancyArrowPatch):
         xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
         self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
         FancyArrowPatch.draw(self, renderer)
+"""

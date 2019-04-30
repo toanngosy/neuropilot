@@ -10,9 +10,10 @@ class CustomRewardWrapper(gym.RewardWrapper):
         return 1
 
 
-env = CustomRewardWrapper(gym.make('QuadRotorEnv-v0'))
+env = gym.make('QuadRotorEnv-v0')
 state = env.reset()
 
+print(env.observation_space.shape)
 done = False
 i = 0
 while not done:
