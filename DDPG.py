@@ -7,12 +7,13 @@ from rl.random import OrnsteinUhlenbeckProcess
 from keras.models import Sequential, Model
 import tensorflow as tf
 import os
-
+from gym import error, spaces, utils
 import gym
 import quadrotorenv
 import argparse
 from datetime import datetime
 from quadtensorboard import QuadTensorBoard
+import numpy as np
 
 parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
 parser.add_argument('--step', dest='step', action='store', default=2000)
@@ -28,7 +29,30 @@ if not os.path.exists('weights'):
     print("Directory ", 'weights',  " Created ")
 FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
-env = gym.make('QuadRotorEnv-v0')
+class TargetObservationWrapper(gym.ObservationWrapper):
+    def __init__(self, env):
+        super(TargetObservationWrapper, self).__init__(env)
+        obs_high = np.array([
+                   self.max_x, self.max_y, self.max_z,
+                   self.max_x, self.max_y, self.max_z,
+                   np.finfo(np.float32).max, np.finfo(np.float32).max, np.finfo(np.float32).max,
+                   np.pi/2, np.pi/2, np.pi/2,
+                   np.finfo(np.float32).max, np.finfo(np.float32).max, np.finfo(np.float32).max])
+        obs_low = np.array([
+                   self.min_x, self.min_y, self.min_z,
+                   self.min_x, self.min_y, self.min_z,
+                   np.finfo(np.float32).min, np.finfo(np.float32).min, np.finfo(np.float32).min,
+                   -np.pi/2, -np.pi/2, -np.pi/2,
+                   np.finfo(np.float32).min, np.finfo(np.float32).min, np.finfo(np.float32).min])
+
+        # TODO: fix observation_space bound - @nimbus state[]
+        self.observation_space = spaces.Box(low=obs_low, high=obs_high, dtype=np.float32)
+
+    def observation(self, observation):
+        return np.concatenate([self.target, observation])
+
+
+env = TargetObservationWrapper(gym.make('QuadRotorEnv-v0'))
 env.reset()
 
 # #### ACTOR / CRITIC #####
@@ -39,14 +63,14 @@ LR_ACTOR = 0.001
 SIZE_HIDDEN_LAYER_CRITIC = 128
 LR_CRITIC = 0.001
 REPLAY_BUFFER_SIZE = 100000
-THETA = 0
-MU = 4500
-SIGMA = 0
+THETA = 0.05
+MU = 0
+SIGMA = 0.05
 DISC_FACT = 0.9
 TARGET_MODEL_UPDATE = 0.001
 BATCH_SIZE = 128
-ACTION_REPETITION = 5
-N_STEPS_TRAIN = 250000
+ACTION_REPETITION = 2
+N_STEPS_TRAIN = 1000000
 LOG_INTERVAL = 1000
 
 observation_input = Input(shape=input_shape, name='observation_input')
@@ -62,7 +86,6 @@ x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
 x = Activation('relu')(x)
 x = Dense(action_size)(x)
 x = Activation('sigmoid')(x)
-x = Lambda(lambda x: x * 9000)(x)
 actor = Model(inputs=observation_input, outputs=x)
 opti_actor = Adam(lr=LR_ACTOR)
 
@@ -109,7 +132,6 @@ agent.compile(optimizer=[opti_critic, opti_actor])
 
 logdir = "logs/" + datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
 quadtensorboard = QuadTensorBoard(log_dir=logdir)
-
 
 
 if args.train:

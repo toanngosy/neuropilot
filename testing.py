@@ -1,23 +1,39 @@
 import gym
 import quadrotorenv
+from stable_baselines.common.policies import MlpPolicy
+from stable_baselines.common.vec_env import DummyVecEnv
+from stable_baselines import PPO2, TRPO
+import tensorflow as tf
+import numpy as np
+policy_kwargs = {
+                'act_fun': tf.nn.relu,
+                'net_arch': [32, 32, dict(vf=[32], pi=[32])]
+                }
 
-
-class CustomRewardWrapper(gym.RewardWrapper):
+class TargetObservationWrapper(gym.ObservationWrapper):
     def __init__(self, env):
-        super(CustomRewardWrapper, self).__init__(env)
+        super(TargetObservationWrapper, self).__init__(env)
+        obs_high = np.array([
+                   self.max_x, self.max_y, self.max_z,
+                   self.max_x, self.max_y, self.max_z,
+                   np.finfo(np.float32).max, np.finfo(np.float32).max, np.finfo(np.float32).max,
+                   np.pi/2, np.pi/2, np.pi/2,
+                   np.finfo(np.float32).max, np.finfo(np.float32).max, np.finfo(np.float32).max])
+        obs_low = np.array([
+                   self.min_x, self.min_y, self.min_z,
+                   self.min_x, self.min_y, self.min_z,
+                   np.finfo(np.float32).min, np.finfo(np.float32).min, np.finfo(np.float32).min,
+                   -np.pi/2, -np.pi/2, -np.pi/2,
+                   np.finfo(np.float32).min, np.finfo(np.float32).min, np.finfo(np.float32).min])
 
-    def reward(self, reward):
-        return 1
+        # TODO: fix observation_space bound - @nimbus state[]
+        self.observation_space = gym.spaces.Box(low=obs_low, high=obs_high, dtype=np.float32)
+
+    def observation(self, observation):
+        return np.concatenate([self.target, observation])
 
 
-env = gym.make('QuadRotorEnv-v0')
-state = env.reset()
+env = TargetObservationWrapper(gym.make('QuadRotorEnv-v0'))
 
-print(env.observation_space.shape)
-done = False
-i = 0
-while not done:
-    i += 1
-    env.render()
-    obs, reward, done, _ = env.step(env.action_space.sample())
-    print(reward, end=" ")
+TRPO('MlpPolicy', env, \
+     verbose=False, policy_kwargs=policy_kwargs, tensorboard_log="./tensorboard_log/").learn(10000000)

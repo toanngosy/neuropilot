@@ -89,32 +89,33 @@ class QuadRotorEnv(gym.Env):
 
     def reward(self):
         if self._crashed():
-            return -5
+            return -1
 
-        old_dist_reward = self.d
-        self.d = np.sqrt((self.state[0] - self.target[0])**2 + \
-                    (self.state[1] - self.target[1])**2 + \
-                    (self.state[2] - self.target[2])**2)
+        #old_dist = self.d
+        #self.d = np.sqrt((self.state[0] - self.target[0])**2 + \
+        #            (self.state[1] - self.target[1])**2 + \
+        #            (self.state[2] - self.target[2])**2)
         #self.reward_bin = np.array([0, d/3, 2*d/3, d])
         #self.reward_list = np.array([-0.75, -0.5, 0, 0.5])
         #dist_reward = self.reward_list[(np.digitize(d, self.reward_bin)-1)]
-        dist_reward = self.d
+        #dist = self.d
         #pose_reward = -((abs(self.state[3:6])/self.max_speed).sum() + \
-        #               (abs(self.state[6:8])/np.pi).sum() + \
-        #               (abs(self.state[9:12])/self.max_angular_speed).sum())
+        #                (abs(self.state[6:8])/np.pi).sum() + \
+        #                (abs(self.state[9:12])/self.max_angular_speed).sum())
 
         #time_reward = -0.01*self.num_step
-        #reward = 0.7*dist_reward + 0.15*time_reward + 0.15*pose_reward
-        reward = -(dist_reward - old_dist_reward)
-        #print(reward, dist_reward, time_reward, pose_reward)
+        #dist_reward = -(dist - old_dist)
+        #reward = (2*dist_reward + 0.015*time_reward + 0.00015*pose_reward)*10
+        #reward = -dist_reward
+        #print(reward, 0.9*dist_reward, 0.015*time_reward, 0.0015*pose_reward)
         if self._reach_target():
-            return reward + 20
+            return 5
 
-        return reward
+        return 0
 
     def reset(self):
         # random spawn target
-        #self.target = np.zeros((3,))
+        self.target = np.zeros((3,))
         #self.target[0] = np.random.uniform(low=self.min_x, high=self.max_x)
         #self.target[1] = np.random.uniform(low=self.min_y, high=self.max_y)
         #self.target[2] = np.random.uniform(low=self.min_z, high=self.max_z)
@@ -265,7 +266,7 @@ class QuadRotorEnv(gym.Env):
         d = np.sqrt((self.state[0] - self.target[0])**2 + \
                     (self.state[1] - self.target[1])**2 + \
                     (self.state[2] - self.target[2])**2)
-        if d < 0.05:
+        if d < 0.5:
             print("reach!")
             return True
         else:
