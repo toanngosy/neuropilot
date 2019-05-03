@@ -33,11 +33,15 @@ class TargetObservationWrapper(gym.ObservationWrapper):
         return np.concatenate([observation, self.target])
 
 env = TargetObservationWrapper(gym.make('QuadRotorEnv-v1'))
+
 env = DummyVecEnv([lambda: env])
-TRPO('MlpPolicy', env=env,
+
+model = TRPO('MlpPolicy', env=env,
      verbose=False, gamma=0.90, lam=0.95, cg_iters=10, vf_stepsize=0.003, timesteps_per_batch=1000,
      max_kl=0.3, entcoeff=0.0, cg_damping=0.01, vf_iters=3,
-     policy_kwargs=policy_kwargs, tensorboard_log="./tensorboard_log/").learn(100000000)
+     policy_kwargs=policy_kwargs, tensorboard_log="./tensorboard_log/")
 
+model.learn(1000000)
+model.save("TRPO_Pilot")
 """PPO2('MlpPolicy', env=env, learning_rate=0.003,
      policy_kwargs=policy_kwargs, tensorboard_log="./tensorboard_log/").learn(100000000)"""

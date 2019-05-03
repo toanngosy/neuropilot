@@ -393,23 +393,20 @@ class QuadRotorEnv_v1(gym.Env):
 
     def reward(self):
         if self._crashed_box():
-            return -1
+            return -100
         #print(self.state)
-        old_dist = self.d
-        self.d = np.sqrt((self.state[0] - self.target[0])**2 + \
-                    (self.state[1] - self.target[1])**2 + \
-                    (self.state[2] - self.target[2])**2)
+        dist_reward = - np.sqrt((self.state[0] - self.target[0])**2 + \
+                      (self.state[1] - self.target[1])**2 + \
+                      (self.state[2] - self.target[2])**2)
         #self.reward_bin = np.array([0, d/3, 2*d/3, d])
         #self.reward_list = np.array([-0.75, -0.5, 0, 0.5])
         #dist_reward = self.reward_list[(np.digitize(d, self.reward_bin)-1)]
-        dist = self.d
-        pose_reward = -(np.mean(abs(self.state[6:8]))/(np.pi/2))
+        
+        pose_reward = -(np.mean(abs(self.state[6:8]))/(np.pi))
 
-        #time_reward = -0.01*self.num_step
-        dist_reward = -(dist - old_dist)
-        reward = (100*dist_reward + pose_reward)/10
-        #reward = dist_reward
-        #print(reward, dist_reward, pose_reward)
+        time_reward = -0.01*self.num_step
+        reward = dist_reward/10 + pose_reward + time_reward
+        
         if self._reach_target():
             self.target[0] = np.random.uniform(low=self.min_x, high=self.max_x)
             self.target[1] = np.random.uniform(low=self.min_y, high=self.max_y)
@@ -613,7 +610,7 @@ class QuadRotorEnv_v1(gym.Env):
 
 # support class
 class Propeller:
-    def __init__(self, diameter, pitch, thrust_unit='N', min_speed = 0, max_speed = 9000):
+    def __init__(self, diameter, pitch, thrust_unit='N', min_speed = 0, max_speed = 15000):
         self.d = diameter
         self.pitch = pitch
         self.thrust_unit = thrust_unit
