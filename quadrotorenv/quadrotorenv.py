@@ -402,7 +402,7 @@ class QuadRotorEnv_v1(gym.Env):
         #self.reward_list = np.array([-0.75, -0.5, 0, 0.5])
         #dist_reward = self.reward_list[(np.digitize(d, self.reward_bin)-1)]
         
-        pose_reward += 1/((np.mean(abs(self.state[6:8]))/(np.pi))+0.5)
+        pose_reward = 1/((np.mean(abs(self.state[6:8]))/(np.pi))+0.5)
 
         time_reward = -0.01*self.num_step
         reward = dist_reward/10 + pose_reward + time_reward
