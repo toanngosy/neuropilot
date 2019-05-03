@@ -36,14 +36,12 @@ env = TargetObservationWrapper(gym.make('QuadRotorEnv-v1'))
 
 env = DummyVecEnv([lambda: env])
 
-model = TRPO.load("TRPO_Pilot")
+model = TRPO('MlpPolicy', env=env,
+     verbose=False, gamma=0.90, lam=0.95, cg_iters=10, vf_stepsize=0.003, timesteps_per_batch=1000,
+     max_kl=0.3, entcoeff=0.0, cg_damping=0.01, vf_iters=3,
+     policy_kwargs=policy_kwargs, tensorboard_log="./tensorboard_log/")
 
-for i in range(20):
-    obs = env.reset()
-
-    done = False
-
-    while not done:
-        action, _states = model.predict(obs)
-        obs, reward, done, info = env.step(action)
-        env.render()
+model.learn(1000000)
+model.save("TRPO_Pilot")
+"""PPO2('MlpPolicy', env=env, learning_rate=0.003,
+     policy_kwargs=policy_kwargs, tensorboard_log="./tensorboard_log/").learn(100000000)"""
