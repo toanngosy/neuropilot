@@ -5,6 +5,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import PPO2, TRPO
 import tensorflow as tf
 import numpy as np
+
 policy_kwargs = {
                 'act_fun': tf.nn.relu,
                 'net_arch': [32, 32, dict(vf=[32], pi=[32])]
