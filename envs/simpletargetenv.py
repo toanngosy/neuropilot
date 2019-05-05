@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as Axes3D
 import sys
 
+
 class SimpleTargetEnv2D(gym.Env):
     def __init__(self):
         self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32)
@@ -29,6 +30,7 @@ class SimpleTargetEnv2D(gym.Env):
 
     def render(self, mode='human', close=False):
         print('current state:', self.state)
+
 
 class SimpleTargetEnv3D(gym.Env):
     def __init__(self):
