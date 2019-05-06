@@ -29,6 +29,7 @@ class SimpleTargetEnv2D(gym.Env):
         self.state[0] = 1
         self.state[1] = 1
         self.viewer = None
+        self.verbal = False
 
     def reset(self):
         self.state[0] = np.random.uniform(self.min_x, self.max_x)
@@ -44,13 +45,14 @@ class SimpleTargetEnv2D(gym.Env):
         done = self._reached() or self._crashed()
 
         next_observation = np.copy(self.state)
-        print(self.state, reward)
+        if self.verbal:
+            print(self.state, reward)
         return next_observation, reward, done, {}
 
     def _reached(self):
         distance = np.linalg.norm(self.target - self.state)
-        return  distance < 0.01
-
+        return  distance < 1
+        
     def _crashed(self):
         return (self.state[0] < self.min_x) or \
                (self.state[0] > self.max_x) or \
@@ -58,8 +60,9 @@ class SimpleTargetEnv2D(gym.Env):
                (self.state[1] > self.max_y)    \
 
     def reward(self):
-        reward = - np.linalg.norm(self.target - self.state)
-
+        #reward = - np.linalg.norm(self.target - self.state)
+        reward = 0
+        
         if self._reached():
             reward = 100
 
