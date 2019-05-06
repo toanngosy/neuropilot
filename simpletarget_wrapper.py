@@ -1,5 +1,5 @@
-import gym 
-import numpy as np 
+import gym
+import numpy as np
 
 class ObsWrapper(gym.ObservationWrapper):
 	def __init__(self,env):
@@ -11,7 +11,7 @@ class ObsWrapper(gym.ObservationWrapper):
 
 class STRewardWrapper(gym.RewardWrapper):
 	def __init__(self,env):
-		super(STRewardWrapper).__init__(env)
+		super(STRewardWrapper, self).__init__(env)
 
 	def reward(self,reward):
 		return -np.linalg.norm(self.target - self.state , ord = 'fro')
