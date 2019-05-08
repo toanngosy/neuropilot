@@ -14,4 +14,4 @@ class STRewardWrapper(gym.RewardWrapper):
 		super(STRewardWrapper, self).__init__(env)
 
 	def reward(self,reward):
-		return -np.linalg.norm(self.target - self.state , ord = 'fro')
+		return -np.linalg.norm(self.target - self.state )
