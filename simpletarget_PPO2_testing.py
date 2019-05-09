@@ -7,7 +7,7 @@ from simpletarget_wrapper import ObsWrapper , STRewardWrapper
 
 
 
-env = DummyVecEnv([lambda: STRewardWrapper(ObsWrapper(gym.make('SimpleTargetEnv2D-v0')))])
+env = DummyVecEnv([lambda: STRewardWrapper(ObsWrapper(gym.make('SimpleTargetEnv3D-v0')))])
 
 
 model = PPO2.load("ppo2_simpletarget")
