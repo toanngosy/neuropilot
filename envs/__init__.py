@@ -2,12 +2,14 @@ from gym.envs.registration import register
 
 register(
     id='QuadRotorEnv-v0',
-    entry_point='envs.quadrotorenv:QuadRotorEnv_v0'
+    entry_point='envs.quadrotorenv:QuadRotorEnv_v0',
+    max_episode_steps = 1000
 )
 
 register(
     id='QuadRotorEnv-v1',
-    entry_point='envs.quadrotorenv:QuadRotorEnv_v1'
+    entry_point='envs.quadrotorenv:QuadRotorEnv_v1',
+    max_episode_steps = 1000
 )
 
 register(

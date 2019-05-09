@@ -151,29 +151,57 @@ class QuadRotorEnv_v0(gym.Env):
     def render(self, mode='human'):
 
         if self.viewer is None:
-            self.viewer = plt.figure()
-            self.ax = Axes3D.Axes3D(self.viewer)
-            self.ax.set_xlim3d([self.min_x, self.max_x])
-            self.ax.set_xlabel('X')
-            self.ax.set_ylim3d([self.min_y, self.max_y])
-            self.ax.set_ylabel('Y')
-            self.ax.set_zlim3d([self.min_z, self.max_z])
-            self.ax.set_zlabel('Z')
-            self.ax.set_title('Quadrotor Simulation')
-            self.l1,  = self.ax.plot([], [], [], color='blue', linewidth=3, antialiased=False)
-            self.l2,  = self.ax.plot([], [], [], color='blue', linewidth=3, antialiased=False)
-            self.hub, = self.ax.plot([], [], [], marker='^', color='blue', markersize=6, antialiased=False)
+            #self.viewer, self.ax = plt.subplots(figsize=(40,10), ncols=4, nrows=1)
+            self.viewer = plt.figure(figsize=(40,40))
+            # set up 2D postion view
+            # XY PLAN view
+            self.ax1 = self.viewer.add_subplot(222)
+            self.ax1.set_xlim([self.min_x-5, self.max_x+5])
+            self.ax1.set_xlabel('X')
+            self.ax1.set_ylim([self.min_y-5, self.max_y+5])
+            self.ax1.set_ylabel('Y')
+            self.ax1.set_title("XY plan view")
+            self.agentplotxy, = self.ax1.plot([], [], marker='o', color='blue', markersize=6, antialiased=False)
+            self.targetplotxy, = self.ax1.plot([], [],  marker='o', color='red', markersize=6, antialiased=False)
+            # XZ PLAN view
+            self.ax2 = self.viewer.add_subplot(223)
+            self.ax2.set_xlim([self.min_x-5, self.max_x+5])
+            self.ax2.set_xlabel('X')
+            self.ax2.set_ylim([self.min_z-5, self.max_z+5])
+            self.ax2.set_ylabel('Z')
+            self.ax2.set_title("XZ plan view")
+            self.agentplotxz, = self.ax2.plot([], [], marker='o', color='blue', markersize=6, antialiased=False)
+            self.targetplotxz, = self.ax2.plot([], [],  marker='o', color='red', markersize=6, antialiased=False)
 
-            #self.upward_indicator = Arrow3D([], [], [], mutation_scale=20, lw=3, arrowstyle="-|>", color="r")
-            #self.ax.add_artist(self.upward_indicator)
+            # ZY PLAN view
+            self.ax3 = self.viewer.add_subplot(224)
+            self.ax3.set_xlim([self.min_y-5, self.max_y+5])
+            self.ax3.set_xlabel('Y')
+            self.ax3.set_ylim([self.min_z-5, self.max_z+5])
+            self.ax3.set_ylabel('Z')
+            self.ax3.set_title("YZ plan view")
+            self.agentplotyz, = self.ax3.plot([], [], marker='o', color='blue', markersize=6, antialiased=False)
+            self.targetplotyz, = self.ax3.plot([], [],  marker='o', color='red', markersize=6, antialiased=False)
 
-            # plot target
-            #print(self.target)
-            self.ax.plot([self.target[0]], [self.target[1]], [self.target[2]], marker='o', color='red', markersize=6, antialiased=False)
 
-            # add manual control
+
+            #set up 3D view
+            self.ax3D = self.viewer.add_subplot(221, projection='3d')
+            self.ax3D.set_xlim3d([self.min_x, self.max_x])
+            self.ax3D.set_xlabel('X')
+            self.ax3D.set_ylim3d([self.min_y, self.max_y])
+            self.ax3D.set_ylabel('Y')
+            self.ax3D.set_zlim3d([self.min_z, self.max_z])
+            self.ax3D.set_zlabel('Z')
+            self.ax3D.set_title('Quadrotor Simulation')
+            self.l1,  = self.ax3D.plot([], [], [], color='blue', linewidth=3, antialiased=False)
+            self.l2,  = self.ax3D.plot([], [], [], color='blue', linewidth=3, antialiased=False)
+            self.hub, = self.ax3D.plot([], [], [], marker='^', color='blue', markersize=6, antialiased=False)
+            self.target3Dplot, = self.ax3D.plot([], [], [], marker='o', color='red', markersize=6, antialiased=False)
+            # Add manual control
             self.viewer.canvas.mpl_connect('key_press_event', self._keypress_routine)
 
+        #Update 3D model 
         R = self._rotation_matrix(self.state[3:6])
         L = self.L
         points = np.array([[-L, 0, 0], [L, 0, 0], [0, -L, 0], [0, L, 0], [0, 0, 0], [0, 0, 0]]).T
@@ -184,14 +212,32 @@ class QuadRotorEnv_v0(gym.Env):
 
         self.l1.set_data(points[0, 0:2], points[1, 0:2])
         self.l1.set_3d_properties(points[2, 0:2])
+
         self.l2.set_data(points[0, 2:4], points[1, 2:4])
         self.l2.set_3d_properties(points[2, 2:4])
+
         self.hub.set_data(points[0, 5], points[1, 5])
         self.hub.set_3d_properties(points[2, 5])
+        
+        self.target3Dplot.set_data(self.target[0], self.target[1])
+        self.target3Dplot.set_3d_properties(self.target[2])
 
+
+        #Update XY view 
+
+        self.agentplotxy.set_data([self.state[0]], [self.state[1]])
+        self.targetplotxy.set_data([self.target[0]], [self.target[1]])
+
+        #Update XZ view
+        self.agentplotxz.set_data([self.state[0]], [self.state[2]])
+        self.targetplotxz.set_data([self.target[0]], [self.target[2]])
+
+        #Update YZ view
+        self.agentplotyz.set_data([self.state[1]], [self.state[2]])
+        self.targetplotyz.set_data([self.target[1]], [self.target[2]])
         # TODO: add hub indicator
 
-        plt.pause(1e-12)
+        plt.pause(5)
 
     def close(self):
         if self.viewer:
@@ -255,7 +301,8 @@ class QuadRotorEnv_v0(gym.Env):
 
         return self.state
 
-
+    #Since we used negative reward function, we removed crash mechanism to prevent agent from suicide 
+    '''
     def _crashed_box(self):
         # check if agent is out of the box
         if ((self.state[0] > self.max_x or self.state[0] < self.min_x)
@@ -272,12 +319,10 @@ class QuadRotorEnv_v0(gym.Env):
             return True
         else:
             return False
-
+    '''
     def _reach_target(self):
         # check if agent reach target postion
-        d = np.sqrt((self.state[0] - self.target[0])**2 + \
-                    (self.state[1] - self.target[1])**2 + \
-                    (self.state[2] - self.target[2])**2)
+        d = np.linalg.norm(self.target - self.state[0:3])
         if d < 0.5:
             print("reach!")
             return True
