@@ -1,16 +1,17 @@
 import gym
-import envs.simpletargetenv
+import envs.quadrotorenv
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import PPO2
-from simpletarget_wrapper import ObsWrapper , STRewardWrapper
+from quadrotor_wrapper import QuadrotorObsWrapper , QuadrotorRewardWrapper
 
 
+# multiprocess environment
 
-env = DummyVecEnv([lambda: STRewardWrapper(ObsWrapper(gym.make('SimpleTargetEnv3D-v0')))])
+env = DummyVecEnv([lambda: QuadrotorRewardWrapper(QuadrotorObsWrapper(gym.make('QuadRotorEnv-v0')))])
 
 
-model = PPO2.load("ppo2_simpletarget")
+model = PPO2.load("ppo2_quad")
 
 
 for i in range(40):
