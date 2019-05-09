@@ -170,7 +170,7 @@ class SimpleTargetEnv3D(gym.Env):
     def render(self, mode='human', close=False):
         if self.viewer is None:
             #initialize renderings
-            self.viewer, self.ax = plt.subplots(ncols=3, nrows=1)
+            self.viewer, self.ax = plt.subplots(figsize=(30,10), ncols=3, nrows=1)
             self.ax[0].set_xlim([self.min_x-5, self.max_x+5])
             self.ax[0].set_xlabel('X')
             self.ax[0].set_ylim([self.min_y-5, self.max_y+5])
