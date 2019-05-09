@@ -82,7 +82,7 @@ class QuadRotorEnv_v0(gym.Env):
         self.motor4.set_speed(action[3])
 
         self.state = self._get_new_state()
-        done = self._crashed_box() or self._reach_target()
+        done =  self._reach_target()
         reward = self.reward()
 
         # increase num_step
@@ -92,8 +92,7 @@ class QuadRotorEnv_v0(gym.Env):
         return self.state, reward, done, {}
 
     def reward(self):
-        if self._crashed():
-            return -1
+ 
         #print(self.state)
         old_dist = self.d
         self.d = np.sqrt((self.state[0] - self.target[0])**2 + \
