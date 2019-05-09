@@ -202,7 +202,7 @@ class QuadRotorEnv_v0(gym.Env):
             self.viewer.canvas.mpl_connect('key_press_event', self._keypress_routine)
 
         #Update 3D model 
-        R = self._rotation_matrix(self.state[3:6])
+        R = self._rotation_matrix(self.state[6:9])
         L = self.L
         points = np.array([[-L, 0, 0], [L, 0, 0], [0, -L, 0], [0, L, 0], [0, 0, 0], [0, 0, 0]]).T
         points = np.dot(R, points)

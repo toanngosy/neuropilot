@@ -119,7 +119,7 @@ class Quadrotor():
         return R
 
     def render_update(self):
-        R = self.rotation_matrix(self.state[3:6])
+        R = self.rotation_matrix(self.state[6:9])
         L = self.L
         points = np.array([[-L, 0, 0], [L, 0, 0], [0, -L, 0], [0, L, 0], [0, 0, 0], [0, 0, 0]]).T
         points = np.dot(R, points)
