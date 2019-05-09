@@ -32,6 +32,7 @@ class SimpleTargetEnv2D(gym.Env):
         self.verbal = False
 
     def reset(self):
+        self.count = 0
         #self.state[0] = np.random.uniform(self.min_x, self.max_x)
         #self.state[1] = np.random.uniform(self.min_y, self.max_y)
         self.target[0] = np.random.uniform(self.min_x, self.max_x)
@@ -41,10 +42,13 @@ class SimpleTargetEnv2D(gym.Env):
         return observation
 
     def step(self, action):
+        self.count += 1
         self.state = self.state + action
         reward = - np.linalg.norm(self.target - self.state)
 
         done = self._reached()
+        if done:
+            print(self.count)
         next_observation = np.copy(self.state)
         if self.verbal:
             print(self.state, reward)

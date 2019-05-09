@@ -12,10 +12,12 @@ register(
 
 register(
     id='SimpleTargetEnv2D-v0',
-    entry_point='envs.simpletargetenv:SimpleTargetEnv2D'
+    entry_point='envs.simpletargetenv:SimpleTargetEnv2D',
+    max_episode_steps=200
 )
 
 register(
     id='SimpleTargetEnv3D-v0',
-    entry_point='envs.simpletargetenv:SimpleTargetEnv3D'
+    entry_point='envs.simpletargetenv:SimpleTargetEnv3D',
+    max_episode_steps=200
 )
