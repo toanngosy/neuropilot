@@ -126,9 +126,9 @@ class SimpleTargetEnv3D(gym.Env):
         self.verbal = False
 
     def reset(self):
-        self.state[0] = np.random.uniform(self.min_x, self.max_x)
-        self.state[1] = np.random.uniform(self.min_y, self.max_y)
-        self.state[2] = np.random.uniform(self.min_z, self.max_z)
+        #self.state[0] = np.random.uniform(self.min_x, self.max_x)
+        #self.state[1] = np.random.uniform(self.min_y, self.max_y)
+        #self.state[2] = np.random.uniform(self.min_z, self.max_z)
         self.target[0] = np.random.uniform(self.min_x, self.max_x)
         self.target[1] = np.random.uniform(self.min_y, self.max_y)
         self.target[2] = np.random.uniform(self.min_z, self.max_z)
@@ -138,7 +138,6 @@ class SimpleTargetEnv3D(gym.Env):
 
     def step(self, action):
         self.state = self.state + action
-        x, y, z = self.state
         reward = - np.linalg.norm(self.target - self.state)
         done = self._reached()
         next_observation = np.copy(self.state)
